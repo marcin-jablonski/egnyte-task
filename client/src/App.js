@@ -7,9 +7,7 @@ const client = new W3CWebSocket('ws://127.0.0.1:8080');
 class App extends Component {
   constructor(props) {
     super(props);
-    this.state = {
-      ui: {}
-    };
+    this.state = {};
     this.handleSubmit = this.handleSubmit.bind(this);
     this.handleChange = this.handleChange.bind(this);
   }
@@ -20,13 +18,17 @@ class App extends Component {
     };
     client.onmessage = (message) => {
       const dataFromServer = JSON.parse(message.data);
-      const stateToChange = {};
-      console.log(dataFromServer);
-      if (dataFromServer.type === "INIT") {
-        stateToChange.ui = dataFromServer.payload;
-      } else if (dataFromServer.type === "CHANGE") {
+      let stateToChange = {};
 
+      if (dataFromServer.type === "INIT") {
+        stateToChange = dataFromServer.payload;
+      } else if (dataFromServer.type === "UPDATE") {
+        stateToChange = {
+          ...this.state,
+          ...dataFromServer.payload
+        }
       } else if (dataFromServer.type === "ERROR") {
+        // obviously not the state-of-the-art, but no time :)
         console.log(dataFromServer.payload)
       }
 
@@ -49,18 +51,21 @@ class App extends Component {
     }
 
     this.setState({
-      ui: {
-        ...this.state.ui,
-        ...stateToChange
-      }
+      ...this.state,
+      ...stateToChange
     })
+
+    client.send(JSON.stringify({
+      type: "CHANGE",
+      payload: stateToChange
+    }))
   }
 
   render() {
     return (
       <form onSubmit={this.handleSubmit}>
         {
-          Object.entries(this.state.ui).map(([key, value]) => {
+          Object.entries(this.state).map(([key, value]) => {
             if (value.type === "checkbox") {
               return (
                 <CheckboxGroup key={key} name={key} state={value.state} handleChange={this.handleChange} />

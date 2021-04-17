@@ -4,9 +4,19 @@ class CheckboxGroup extends Component {
   constructor(props) {
     super(props);
     var mapped = this.props.state.map(item => ({ [item.value]: item.checked }));
-    var newObj = Object.assign({}, ...mapped);
-    this.state = newObj;
+    var stateObject = Object.assign({}, ...mapped);
+    this.state = stateObject;
     this.handleInputChange = this.handleInputChange.bind(this);
+  }
+
+  componentDidUpdate(prevProps) {
+    if (prevProps.state !== this.props.state) {
+      var mapped = this.props.state.map(item => ({ [item.value]: item.checked }));
+      var stateObject = Object.assign({}, ...mapped);
+      this.setState({
+        ...stateObject
+      })
+    }
   }
 
   handleInputChange(event) {

@@ -1,6 +1,6 @@
 import WebSocket from 'ws';
 
-const state = {
+let state = {
   first: {
     type: "checkbox",
     state: [
@@ -58,11 +58,15 @@ wss.on('connection', (ws) => {
 
     if (message.type === 'CHANGE') {
       // handle state change
+      state = {
+        ...state,
+        ...message.payload
+      }
       wss.clients.forEach((client) => {
         if (client !== ws && client.readyState === WebSocket.OPEN) {
           const updateObject = {
             type: "UPDATE",
-            payload: state
+            payload: message.payload
           };
 
           client.send(JSON.stringify(updateObject));
