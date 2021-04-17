@@ -7,7 +7,7 @@ class App extends Component {
   constructor(props) {
     super(props);
     this.state = {
-      ui: []
+      ui: {}
     };
   }
 
@@ -19,8 +19,10 @@ class App extends Component {
       const dataFromServer = JSON.parse(message.data);
       const stateToChange = {};
       console.log(dataFromServer);
-      if (dataFromServer.type === "INIT" || dataFromServer.type === "CHANGE") {
+      if (dataFromServer.type === "INIT") {
         stateToChange.ui = dataFromServer.payload;
+      } else if (dataFromServer.type === "CHANGE") {
+
       } else if (dataFromServer.type === "ERROR") {
         console.log(dataFromServer.payload)
       }
@@ -29,6 +31,9 @@ class App extends Component {
         ...stateToChange
       });
     };
+    client.onclose = () => {
+      console.log('Disconnected')
+    }
   }
   
   render() {
