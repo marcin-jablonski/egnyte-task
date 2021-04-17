@@ -1,5 +1,6 @@
 import React, { Component } from 'react';
 import { w3cwebsocket as W3CWebSocket } from "websocket";
+import CheckboxGroup from './CheckboxGroup';
 
 const client = new W3CWebSocket('ws://127.0.0.1:8080');
 
@@ -9,9 +10,11 @@ class App extends Component {
     this.state = {
       ui: {}
     };
+    this.handleSubmit = this.handleSubmit.bind(this);
+    this.handleChange = this.handleChange.bind(this);
   }
 
-  componentWillMount() {
+  componentDidMount() {
     client.onopen = () => {
       console.log('WebSocket Client Connected');
     };
@@ -35,12 +38,45 @@ class App extends Component {
       console.log('Disconnected')
     }
   }
-  
+
+  handleSubmit(event) {
+    event.preventDefault();
+  }
+
+  handleChange(key, newKeyState) {
+    const stateToChange = {
+      [key]: newKeyState
+    }
+
+    this.setState({
+      ui: {
+        ...this.state.ui,
+        ...stateToChange
+      }
+    })
+  }
+
   render() {
     return (
-      <div>
-        UI incoming
-      </div>
+      <form onSubmit={this.handleSubmit}>
+        {
+          Object.entries(this.state.ui).map(([key, value]) => {
+            if (value.type === "checkbox") {
+              return (
+                <CheckboxGroup key={key} name={key} state={value.state} handleChange={this.handleChange} />
+              )
+            } else {
+              // possible implementation of other input types
+              return (
+                <div>
+                  Unknown input type
+                </div>
+              )
+            }
+
+          })
+        }
+      </form>
     );
   }
 }
