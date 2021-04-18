@@ -2,30 +2,46 @@ import React, { Component } from 'react';
 import { w3cwebsocket as W3CWebSocket } from "websocket";
 import CheckboxGroup from './CheckboxGroup';
 
-const client = new W3CWebSocket('ws://127.0.0.1:8080');
-
 class App extends Component {
   constructor(props) {
     super(props);
-    this.state = {};
+    this.state = {
+      client: null,
+      ui: {}
+    };
     this.handleSubmit = this.handleSubmit.bind(this);
     this.handleChange = this.handleChange.bind(this);
+    this.connect = this.connect.bind(this);
   }
 
-  componentDidMount() {
+  connect() {
+    const client = new W3CWebSocket('ws://127.0.0.1:8080');
+
     client.onopen = () => {
       console.log('WebSocket Client Connected');
+      this.setState({
+        ...this.state,
+        client: client
+      });
     };
     client.onmessage = (message) => {
       const dataFromServer = JSON.parse(message.data);
       let stateToChange = {};
 
       if (dataFromServer.type === "INIT") {
-        stateToChange = dataFromServer.payload;
+        stateToChange = {
+          ...this.state,
+          ui: {
+            ...dataFromServer.payload
+          }
+        };
       } else if (dataFromServer.type === "UPDATE") {
         stateToChange = {
           ...this.state,
-          ...dataFromServer.payload
+          ui: {
+            ...this.state.ui,
+            ...dataFromServer.payload
+          }
         }
       } else if (dataFromServer.type === "ERROR") {
         // obviously not the state-of-the-art, but no time :)
@@ -37,8 +53,22 @@ class App extends Component {
       });
     };
     client.onclose = () => {
-      console.log('Disconnected')
+      console.log('Disconnected, trying to reconnect...')
+      this.setState({
+        ...this.state,
+        client: null
+      });
+      // probably incremental reconnect time could work better
+      setTimeout(this.connect, 1000);
+    };
+    client.onerror = (err) => {
+      console.log(err.message);
+      client.close();
     }
+  }
+
+  componentDidMount() {
+    this.connect();
   }
 
   handleSubmit(event) {
@@ -48,14 +78,17 @@ class App extends Component {
   handleChange(key, newKeyState) {
     const stateToChange = {
       [key]: newKeyState
-    }
+    };
 
     this.setState({
       ...this.state,
-      ...stateToChange
-    })
+      ui: {
+        ...this.state.ui,
+        ...stateToChange
+      }
+    });
 
-    client.send(JSON.stringify({
+    this.state.client.send(JSON.stringify({
       type: "CHANGE",
       payload: stateToChange
     }))
@@ -65,7 +98,7 @@ class App extends Component {
     return (
       <form onSubmit={this.handleSubmit}>
         {
-          Object.entries(this.state).map(([key, value]) => {
+          Object.entries(this.state.ui).map(([key, value]) => {
             if (value.type === "checkbox") {
               return (
                 <CheckboxGroup key={key} name={key} state={value.state} handleChange={this.handleChange} />
