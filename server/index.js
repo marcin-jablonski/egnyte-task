@@ -2,11 +2,13 @@ import WebSocket from 'ws';
 import DataStorage from './DataStorage.js';
 
 const startServer = (server, dataStorage) => {
+  console.log("Starting server...")
   server.on('connection', (client) => {
     initializeConnection(client, dataStorage);
 
     registerMessageHandler(client, server, dataStorage, handleMessage);
   });
+  console.log("Server up and running!")
 }
 
 const initializeConnection = (client, dataStorage) => {
